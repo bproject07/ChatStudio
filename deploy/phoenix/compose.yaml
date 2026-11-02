@@ -1,0 +1,49 @@
+name: chat-phoenix
+services:
+  db:
+    image: postgres:17.9-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: phoenix
+      POSTGRES_DB: phoenix
+      POSTGRES_PASSWORD_FILE: /run/secrets/db-password
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./secrets/db-password:/run/secrets/db-password:ro
+    healthcheck:
+      test: [CMD-SHELL, "pg_isready -U phoenix -d phoenix"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    mem_limit: 768m
+    cpus: 1
+    logging:
+      driver: json-file
+      options: {max-size: 10m, max-file: "3"}
+    networks: [backend]
+  phoenix:
+    image: arizephoenix/phoenix:version-20.14.0
+    restart: unless-stopped
+    depends_on:
+      db: {condition: service_healthy}
+    env_file: ./secrets/phoenix.env
+    environment:
+      PHOENIX_ENABLE_AUTH: "true"
+      PHOENIX_ENABLE_STRONG_PASSWORD_POLICY: "true"
+      PHOENIX_USE_SECURE_COOKIES: "true"
+      PHOENIX_TELEMETRY_ENABLED: "false"
+      PHOENIX_DEFAULT_RETENTION_POLICY_DAYS: "30"
+    ports:
+      - "127.0.0.1:6006:6006"
+    mem_limit: 2g
+    cpus: 1
+    security_opt: [no-new-privileges:true]
+    logging:
+      driver: json-file
+      options: {max-size: 10m, max-file: "3"}
+    networks: [backend, outbound]
+networks:
+  backend: {internal: true}
+  outbound: {}
+volumes:
+  postgres-data:

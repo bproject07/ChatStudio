@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="bg">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#ffffff">
+  <meta name="description" content="Агентите на чата: модели, визитки, версионирани промптове и инструменти.">
+  <title>Агенти · Chat Studio</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/css/app.css?v=20260716-1">
+  <link rel="stylesheet" href="/css/chat.css?v=20260731-1">
+</head>
+<body>
+  <svg class="svg-sprite" aria-hidden="true">
+    <symbol id="icon-spark" viewBox="0 0 24 24"><path d="m12 3 1.6 4.4L18 9l-4.4 1.6L12 15l-1.6-4.4L6 9l4.4-1.6z"></path><path d="m19 15 .8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"></path></symbol>
+    <symbol id="icon-layers" viewBox="0 0 24 24"><path d="m12 3 9 5-9 5-9-5z"></path><path d="m3 12 9 5 9-5"></path><path d="m3 16 9 5 9-5"></path></symbol>
+    <symbol id="icon-x" viewBox="0 0 24 24"><path d="m6 6 12 12"></path><path d="m18 6-12 12"></path></symbol>
+  </svg>
+
+  <header class="app-header">
+    <div class="header-inner">
+      <a class="brand" href="/">
+        <span class="brand-icon"><svg class="icon"><use href="#icon-spark"></use></svg></span>
+        <span><strong>Агенти и промптове</strong><small>Модели, визитки, версии, инструменти</small></span>
+      </a>
+      <a class="secondary-button back-to-chat" href="/">← Обратно към чата</a>
+    </div>
+  </header>
+
+  <main class="app-main agents-page">
+    <aside class="panel agents-column">
+      <h3 class="sidebar-title"><svg class="icon"><use href="#icon-layers"></use></svg> Агенти</h3>
+      <div class="agents-list" id="agentsList"><p class="sidebar-hint">Зареждане...</p></div>
+      <button class="secondary-button new-agent-button" id="newAgentButton" type="button">＋ Нов агент</button>
+    </aside>
+
+    <section class="panel agent-editor agent-editor-page">
+      <div class="agent-editor-top">
+        <h4 id="agentTitle"></h4>
+        <label class="sidebar-toggle agent-enabled-toggle is-hidden" id="agentEnabledWrap">
+          <input type="checkbox" id="agentEnabled"><span>включен</span>
+        </label>
+        <label class="agent-model-field">Модел
+          <select id="agentModelSelect"></select>
+        </label>
+      </div>
+      <label class="sidebar-field is-hidden" id="activationWrap">Какво поема (визитката за оркестратора)
+        <div class="budget-row">
+          <input type="text" id="agentActivation" maxlength="400" placeholder="Тренировки, контузии, хранене...">
+          <button class="secondary-button" id="saveActivation" type="button">Запази</button>
+        </div>
+      </label>
+      <div class="versions-rows" id="versionsList"></div>
+      <p class="editor-state" id="editorState"></p>
+      <textarea id="promptEditor" maxlength="20000" spellcheck="false"></textarea>
+      <div class="version-save-row">
+        <input type="text" id="versionNote" maxlength="200" placeholder="Бележка: какво промени (по избор)">
+        <label class="sidebar-toggle"><input type="checkbox" id="activateNew" checked><span>активирай веднага</span></label>
+        <button class="primary-button" id="saveVersionButton" type="button" disabled>Запази като нова версия</button>
+      </div>
+    </section>
+
+    <aside class="panel tools-panel">
+      <h3 class="sidebar-title">🛠 Инструменти на агента <span id="agentToolsCount"></span></h3>
+      <p class="sidebar-hint">Точните описания, които вижда моделът — какво може да прави избраният агент.</p>
+      <div id="agentToolsList"></div>
+    </aside>
+  </main>
+
+  <div class="toast-stack" id="toastStack" aria-live="polite"></div>
+
+  <dialog class="wide-modal new-agent-dialog" id="newAgentDialog">
+    <div class="dialog-head"><h3>Нов специалист</h3><button class="icon-button" id="closeNewAgentDialog" type="button"><svg class="icon"><use href="#icon-x"></use></svg></button></div>
+    <label class="sidebar-field">Ключ (латиница, напр. coach)
+      <input type="text" id="newAgentKey" maxlength="31" placeholder="coach">
+    </label>
+    <label class="sidebar-field">Име
+      <input type="text" id="newAgentName" maxlength="60" placeholder="Треньор">
+    </label>
+    <label class="sidebar-field">Какво поема — визитката, по която Асистентът го избира
+      <input type="text" id="newAgentActivation" maxlength="400" placeholder="Тренировки, упражнения, контузии, хранене, спортни цели">
+    </label>
+    <label class="sidebar-field">Модел
+      <select id="newAgentModel"></select>
+    </label>
+    <label class="sidebar-field">Начален промпт (става v1; после се версионира като всички)
+      <textarea id="newAgentPrompt" rows="7" maxlength="20000" placeholder="Ти си личен фитнес треньор..."></textarea>
+    </label>
+    <div class="version-save-row">
+      <button class="primary-button" id="createAgentButton" type="button">Създай агента</button>
+    </div>
+  </dialog>
+
+  <script src="/js/agents.js?v=20260716-1"></script>
+</body>
+</html>

@@ -1,0 +1,29 @@
+# Build artifacts
+bin/
+obj/
+publish/
+/artifacts/
+*.stackdump
+*.user
+
+# IDE
+.vs/
+.idea/
+
+# Local secrets and environment overrides (never committed)
+appsettings.Local.json
+*.Local.json
+.env
+*.env
+appsettings.Development.json
+appsettings.Production.json
+
+# Runtime user data and state
+/data/artifacts/
+/data/chat-history/
+/state/*.json
+
+# Phoenix deployment credentials and persistent state
+deploy/phoenix/secrets/
+deploy/phoenix/data/
+deploy/phoenix/backups/

@@ -1,0 +1,78 @@
+name: Security Scan & CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  secret-scan:
+    name: Secret & Sensitive Information Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run Gitleaks Secret Scanner
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Check for forbidden local paths or secret files
+        shell: pwsh
+        run: |
+          $files = git ls-files
+          $forbiddenFiles = $files | Where-Object { $_ -match '(\.Local\.json$|\.env$|^secrets/|/secrets/)' }
+          if ($forbiddenFiles) {
+            $forbiddenFiles | ForEach-Object { Write-Host "Forbidden file: $_" }
+            Write-Error "Forbidden secret or local configuration file committed!"
+            exit 1
+          }
+          $rules = @(
+            @{ Name = "OpenAI API Key"; Pattern = 'sk-[A-Za-z0-9_-]{12,}' },
+            @{ Name = "GitHub Token"; Pattern = 'gh[pousr]_[A-Za-z0-9]{12,}' },
+            @{ Name = "Telegram Bot Token"; Pattern = '\b\d{8,10}:[A-Za-z0-9_-]{30,}\b' },
+            @{ Name = "Local Absolute Path"; Pattern = '[A-Za-z]:\\Users\\|[A-Za-z]:\\Projects\\' }
+          )
+          $failed = $false
+          foreach ($rule in $rules) {
+            $hits = Select-String -Path $files -Pattern $rule.Pattern -CaseSensitive:$false |
+              Where-Object { $_.Path -notmatch 'security-and-ci\.yml$' }
+            foreach ($h in $hits) {
+              Write-Host "[$($rule.Name)] $($h.Path):$($h.LineNumber) (matched content redacted)"
+              $failed = $true
+            }
+          }
+          if ($failed) {
+            Write-Error "Sensitive pattern detected in tracked files!"
+            exit 1
+          }
+          Write-Host "All tracked files passed sensitive information checks."
+
+  build-and-test:
+    name: Build & Test (.NET 10)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Restore dependencies
+        run: dotnet restore ChatStudio.slnx
+
+      - name: Build solution
+        run: dotnet build ChatStudio.slnx --no-restore -c Release
+
+      - name: Run unit tests
+        run: dotnet test ChatStudio.slnx --no-build -c Release

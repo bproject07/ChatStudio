@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="bg">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#ffffff">
+  <meta name="description" content="Локален чат с дългосрочна памет чрез хибридно търсене в PostgreSQL.">
+  <title>Chat Studio</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/css/app.css?v=20260716-1">
+  <link rel="stylesheet" href="/css/chat.css?v=20260731-1">
+</head>
+<body>
+  <svg class="svg-sprite" aria-hidden="true">
+    <symbol id="icon-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-4-4"></path></symbol>
+    <symbol id="icon-spark" viewBox="0 0 24 24"><path d="m12 3 1.6 4.4L18 9l-4.4 1.6L12 15l-1.6-4.4L6 9l4.4-1.6z"></path><path d="m19 15 .8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"></path></symbol>
+    <symbol id="icon-file" viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6z"></path><path d="M14 3v5h5"></path></symbol>
+    <symbol id="icon-report" viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6z"></path><path d="M14 3v5h5"></path><path d="M9 13h6"></path><path d="M9 17h6"></path></symbol>
+    <symbol id="icon-chevron" viewBox="0 0 24 24"><path d="m8 10 4 4 4-4"></path></symbol>
+    <symbol id="icon-check" viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"></path></symbol>
+    <symbol id="icon-warning" viewBox="0 0 24 24"><path d="M12 3 2 21h20z"></path><path d="M12 9v5"></path><path d="M12 18h.01"></path></symbol>
+    <symbol id="icon-token" viewBox="0 0 24 24"><path d="M12 2 4 7v10l8 5 8-5V7z"></path><path d="m4 7 8 5 8-5"></path><path d="M12 12v10"></path></symbol>
+    <symbol id="icon-layers" viewBox="0 0 24 24"><path d="m12 3 9 5-9 5-9-5z"></path><path d="m3 12 9 5 9-5"></path><path d="m3 16 9 5 9-5"></path></symbol>
+    <symbol id="icon-arrow" viewBox="0 0 24 24"><path d="M5 12h14"></path><path d="m14 7 5 5-5 5"></path></symbol>
+    <symbol id="icon-refresh" viewBox="0 0 24 24"><path d="M20 7v5h-5"></path><path d="M4 17v-5h5"></path><path d="M6.1 8A7 7 0 0 1 18.6 6L20 8"></path><path d="M17.9 16A7 7 0 0 1 5.4 18L4 16"></path></symbol>
+    <symbol id="icon-x" viewBox="0 0 24 24"><path d="m6 6 12 12"></path><path d="m18 6-12 12"></path></symbol>
+  </svg>
+
+  <header class="app-header">
+    <div class="header-inner">
+      <a class="brand" href="/">
+        <span class="brand-icon"><svg class="icon"><use href="#icon-spark"></use></svg></span>
+        <span><strong>Chat Studio</strong><small>Чат с памет чрез търсене</small></span>
+      </a>
+      <div class="user-switch" title="Профил — всеки има собствен разговор и собствена памет">
+        <svg class="icon"><use href="#icon-layers"></use></svg>
+        <select id="userSelect"></select>
+      </div>
+      <div class="context-meter" id="contextMeter" title="Реални input токени от последния отговор спрямо бюджета">
+        <div class="meter-track"><div class="meter-fill" id="meterFill"></div></div>
+        <span class="meter-text" id="meterText">Контекст: 0%</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="app-main chat-layout">
+    <section class="panel chat-panel">
+      <div class="compact-banner is-hidden" id="compactBanner">
+        <svg class="icon"><use href="#icon-warning"></use></svg>
+        <span id="compactBannerText">Контекстът наближава лимита — чатът скоро ще бъде компактнат.</span>
+      </div>
+
+      <div class="chat-messages" id="chatMessages">
+        <div class="chat-empty" id="chatEmpty">
+          <svg class="icon"><use href="#icon-spark"></use></svg>
+          <strong>Нов разговор</strong>
+          <p>Пиши свободно. Когато разговорът стане голям, ще бъде резюмиран и записан в архива — а следващият чат ще намира контекста чрез търсенето.</p>
+        </div>
+      </div>
+
+      <div class="mic-banner is-hidden" id="micBanner">
+        <svg class="icon"><use href="#icon-spark"></use></svg>
+        <span>Говориш с: <strong id="micAgentName"></strong></span>
+        <button class="secondary-button" id="handbackButton" type="button">Върни към Асистента</button>
+      </div>
+
+      <form class="chat-composer" id="chatForm">
+        <textarea id="chatInput" rows="2" maxlength="4000" placeholder="Напиши съобщение... (Enter за изпращане, Shift+Enter за нов ред)" required></textarea>
+        <button class="primary-button" id="sendButton" type="submit">
+          <svg class="icon"><use href="#icon-arrow"></use></svg><span>Изпрати</span>
+        </button>
+      </form>
+    </section>
+
+    <aside class="chat-sidebar">
+      <div class="panel">
+        <h3 class="sidebar-title"><svg class="icon"><use href="#icon-spark"></use></svg> Модел и контекст</h3>
+        <label class="sidebar-field">Модел
+          <select id="modelSelect"></select>
+        </label>
+        <label class="sidebar-field">Контекстен бюджет (токени)
+          <div class="budget-row">
+            <input type="number" id="budgetInput" min="1000" max="500000" step="1000">
+            <button class="secondary-button" id="saveBudget" type="button">Запази</button>
+          </div>
+        </label>
+        <label class="sidebar-toggle">
+          <input type="checkbox" id="streamToggle" checked>
+          <span>Поточен отговор (streaming)</span>
+        </label>
+        <p class="sidebar-hint">Предупреждение на 85%, автоматично компактиране при запълнен бюджет (100%).</p>
+      </div>
+
+      <div class="panel">
+        <h3 class="sidebar-title"><svg class="icon"><use href="#icon-search"></use></svg> Търсене в паметта</h3>
+        <label class="sidebar-field">Стратегия
+          <select id="strategySelect">
+            <option value="postgres-hybrid" selected>Hybrid (RRF)</option>
+            <option value="postgres-pgvector">pgvector</option>
+            <option value="postgres-full-text">Full-Text</option>
+          </select>
+        </label>
+        <label class="sidebar-field">Top K откъса
+          <select id="topKSelect">
+            <option>2</option><option>3</option><option value="4" selected>4</option><option>5</option><option>6</option>
+          </select>
+        </label>
+        <p class="sidebar-hint">Всеки твой въпрос първо се търси в архива; намерените откъси се подават на модела и се виждат под отговора му.</p>
+      </div>
+
+      <div class="panel">
+        <h3 class="sidebar-title"><svg class="icon"><use href="#icon-layers"></use></svg> Разговор</h3>
+        <div class="sidebar-actions">
+          <button class="secondary-button" id="compactButton" type="button" title="Резюмира текущия разговор, записва го в архива и продължава върху резюмето">Компактни сега</button>
+          <button class="secondary-button" id="newChatButton" type="button" title="Архивира текущия разговор и започва чист нов чат">Нов чат</button>
+          <a class="secondary-button" href="/agents.html" title="Модели, визитки, версионирани промптове и инструменти на агентите">Агенти и промптове</a>
+          <a class="secondary-button" href="/history.html" title="Суровите разговори с произхода на всеки отговор">История на чатовете</a>
+        </div>
+        <div class="seed-note is-hidden" id="seedNote">
+          <svg class="icon"><use href="#icon-check"></use></svg>
+          <span>Разговорът продължава върху резюме на по-ранната част.</span>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h3 class="sidebar-title"><svg class="icon"><use href="#icon-report"></use></svg> Архив <button class="icon-button" id="refreshArchives" type="button" title="Опресни"><svg class="icon"><use href="#icon-refresh"></use></svg></button></h3>
+        <div class="archive-list" id="archiveList"><p class="sidebar-hint">Все още няма архивирани разговори.</p></div>
+      </div>
+    </aside>
+  </main>
+
+  <div class="toast-stack" id="toastStack" aria-live="polite"></div>
+
+  <dialog class="wide-modal" id="archiveDialog">
+    <div class="dialog-head"><h3 id="archiveDialogTitle">Архив</h3><button class="icon-button" id="closeArchiveDialog" type="button"><svg class="icon"><use href="#icon-x"></use></svg></button></div>
+    <pre id="archiveDialogContent"></pre>
+  </dialog>
+
+  <script src="/js/chat.js?v=20260826-1"></script>
+</body>
+</html>

@@ -1,0 +1,10 @@
+[Unit]
+Description=Nightly Phoenix backup
+
+[Timer]
+OnCalendar=*-*-* 03:35:00 UTC
+RandomizedDelaySec=600
+Persistent=true
+
+[Install]
+WantedBy=timers.target

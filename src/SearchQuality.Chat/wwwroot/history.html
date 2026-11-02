@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="bg">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#ffffff">
+  <meta name="description" content="История на разговорите: суровият чат с произхода на всеки отговор.">
+  <title>История · Chat Studio</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/css/app.css?v=20260716-1">
+  <link rel="stylesheet" href="/css/chat.css?v=20260731-1">
+  <link rel="stylesheet" href="/css/history.css?v=20260716-1">
+</head>
+<body>
+  <svg class="svg-sprite" aria-hidden="true">
+    <symbol id="icon-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-4-4"></path></symbol>
+    <symbol id="icon-spark" viewBox="0 0 24 24"><path d="m12 3 1.6 4.4L18 9l-4.4 1.6L12 15l-1.6-4.4L6 9l4.4-1.6z"></path><path d="m19 15 .8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"></path></symbol>
+    <symbol id="icon-report" viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6z"></path><path d="M14 3v5h5"></path><path d="M9 13h6"></path><path d="M9 17h6"></path></symbol>
+    <symbol id="icon-chevron" viewBox="0 0 24 24"><path d="m8 10 4 4 4-4"></path></symbol>
+    <symbol id="icon-layers" viewBox="0 0 24 24"><path d="m12 3 9 5-9 5-9-5z"></path><path d="m3 12 9 5 9-5"></path><path d="m3 16 9 5 9-5"></path></symbol>
+    <symbol id="icon-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></symbol>
+    <symbol id="icon-token" viewBox="0 0 24 24"><path d="M12 2 4 7v10l8 5 8-5V7z"></path><path d="m4 7 8 5 8-5"></path><path d="M12 12v10"></path></symbol>
+    <symbol id="icon-arrow" viewBox="0 0 24 24"><path d="M5 12h14"></path><path d="m14 7 5 5-5 5"></path></symbol>
+    <symbol id="icon-x" viewBox="0 0 24 24"><path d="m6 6 12 12"></path><path d="m18 6-12 12"></path></symbol>
+  </svg>
+
+  <header class="app-header">
+    <div class="header-inner">
+      <a class="brand" href="/">
+        <span class="brand-icon"><svg class="icon"><use href="#icon-clock"></use></svg></span>
+        <span><strong>История</strong><small>Суровите разговори, стъпка по стъпка</small></span>
+      </a>
+      <div class="user-switch" title="Чия история разглеждаш">
+        <svg class="icon"><use href="#icon-layers"></use></svg>
+        <select id="userSelect"></select>
+      </div>
+      <a class="secondary-button back-to-chat" href="/">← Обратно към чата</a>
+    </div>
+  </header>
+
+  <main class="app-main history-layout">
+    <aside class="panel sessions-panel">
+      <div class="sessions-toolbar">
+        <h3 class="sidebar-title"><svg class="icon"><use href="#icon-report"></use></svg> Разговори <span class="sessions-count" id="sessionsCount"></span></h3>
+        <input type="search" id="sessionSearch" placeholder="Търси в съдържанието на разговорите..." title="Търси в текста на всички реплики, не само в заглавията">
+        <div class="filter-chips" id="statusChips">
+          <button class="filter-chip is-on" type="button" data-status="">Всички</button>
+          <button class="filter-chip" type="button" data-status="active">Активни</button>
+          <button class="filter-chip" type="button" data-status="compacted">Компактнати</button>
+          <button class="filter-chip" type="button" data-status="closed">Затворени</button>
+        </div>
+      </div>
+      <div class="sessions-list" id="sessionsList"><p class="sidebar-hint">Зареждане...</p></div>
+    </aside>
+
+    <section class="panel timeline-panel">
+      <div class="timeline-head" id="timelineHead"><p class="sidebar-hint">Избери разговор от списъка вляво.</p></div>
+      <div class="timeline-toolbar is-hidden" id="timelineToolbar">
+        <input type="search" id="timelineSearch" placeholder="Търси в този разговор...">
+        <div class="filter-chips">
+          <button class="filter-chip is-on" type="button" data-role="">Всичко</button>
+          <button class="filter-chip" type="button" data-role="user">Потребител</button>
+          <button class="filter-chip" type="button" data-role="assistant">Асистент</button>
+        </div>
+        <span class="match-count" id="matchCount"></span>
+      </div>
+      <div class="timeline" id="timeline"></div>
+    </section>
+
+    <aside class="panel flow-panel">
+      <h3 class="sidebar-title"><svg class="icon"><use href="#icon-spark"></use></svg> Как работи паметта</h3>
+      <div class="flow-diagram">
+        <div class="flow-node user-node">
+          <strong>1. Разговаряш</strong>
+          <span>Всяко твое съобщение и всеки отговор се записват дословно. Нищо не се губи — дори при рестарт.</span>
+          <span class="stat-line" id="statMessages"><b>…</b> записани реплики <em>(таблица messages)</em></span>
+          <span class="stat-line" id="statSessions"><b>…</b> разговора досега <em>(таблица sessions)</em></span>
+        </div>
+        <div class="flow-arrow loop"></div>
+        <div class="flow-node compact-node">
+          <strong>2. Разговорът се компактва</strong>
+          <span>Когато стане голям (90% от бюджета) или натиснеш „Компактни“, LLM го свива до кратко резюме с важните факти. Резюмето влиза в паметта.</span>
+          <span class="stat-line" id="statDocuments"><b>…</b> резюмета в паметта <em>(таблица documents)</em></span>
+        </div>
+        <div class="flow-arrow"></div>
+        <div class="flow-node search-node">
+          <strong>3. Резюмето става търсимо</strong>
+          <span>Всяко резюме се нарязва на малки откъси. Откъс = парче текст, което търсачката може да намери самостоятелно — по думи (Full-Text) или по смисъл (embeddings).</span>
+          <span class="stat-line" id="statChunks"><b>…</b> търсими откъса <em>(таблица chunks)</em></span>
+        </div>
+        <div class="flow-arrow"></div>
+        <div class="flow-node agent-node">
+          <strong>4. Следващият въпрос „си спомня“</strong>
+          <span>Преди да отговори, чатът търси из откъсите кое е свързано с въпроса ти и го подава на модела заедно с активния промпт. Затова нов разговор знае старите неща.</span>
+          <span class="stat-hint">Кое точно е ползвано за даден отговор виждаш вляво — панелът „Контекст от паметта“ под всяка реплика.</span>
+        </div>
+      </div>
+      <div class="flow-total" id="flowTotal"></div>
+      <p class="sidebar-hint">Числата са на живо от базата, само за избрания потребител — паметта на всеки е отделна.</p>
+    </aside>
+  </main>
+
+  <div class="toast-stack" id="toastStack" aria-live="polite"></div>
+
+  <dialog class="wide-modal" id="archiveDialog">
+    <div class="dialog-head"><h3 id="archiveDialogTitle">Резюме</h3><button class="icon-button" id="closeArchiveDialog" type="button"><svg class="icon"><use href="#icon-x"></use></svg></button></div>
+    <pre id="archiveDialogContent"></pre>
+  </dialog>
+
+  <script src="/js/history.js?v=20260826-1"></script>
+</body>
+</html>

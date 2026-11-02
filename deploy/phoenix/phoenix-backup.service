@@ -1,0 +1,14 @@
+[Unit]
+Description=Back up the Phoenix monitoring database and private configuration
+Requires=docker.service
+After=docker.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/python3 /opt/chat-phoenix/backup.py --directory /opt/chat-phoenix --keep-days 7
+User=root
+UMask=0077
+Nice=10
+IOSchedulingClass=idle
+PrivateTmp=true
+NoNewPrivileges=true

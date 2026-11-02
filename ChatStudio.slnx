@@ -1,0 +1,10 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/SearchQuality/SearchQuality.csproj" />
+    <Project Path="src/SearchQuality.Chat/SearchQuality.Chat.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/SearchQuality.Chat.Tests/SearchQuality.Chat.Tests.csproj" />
+    <Project Path="tests/SearchQuality.Tests/SearchQuality.Tests.csproj" />
+  </Folder>
+</Solution>
